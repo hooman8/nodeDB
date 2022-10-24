@@ -48,6 +48,35 @@ module.exports = {
         next(error);
       });
   },
+  authenticate: (req, res, next) => {
+    User.findOne({
+      email: req.body.email,
+    })
+      .then((user) => {
+        if (user) {
+          user.passwordComparison(req.body.password).then((passwordMath) => {
+            if (passwordMath) {
+              res.locals.redirect = `/users/${user._id}`;
+              req.flash("success", `${user.fullname}'s logged in successfully`);
+              res.locals.user = user;
+              next();
+            } else {
+              req.flash("error", "Your account or password is incorrect");
+              res.locals.redirect("/users/login");
+              next();
+            }
+          });
+        } else {
+          req.flash("error", "Your account or password is incorrect");
+          res.locals.redirect("/users/login");
+          next();
+        }
+      })
+      .catch((error) => {
+        console.log(`Error loggin in user: ${error.message}`);
+        next(error);
+      });
+  },
   update: (req, res, next) => {
     let userId = req.params.id;
     let userParams = {

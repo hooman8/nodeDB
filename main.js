@@ -4,6 +4,8 @@ const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 const connectFlash = require("connect-flash");
 
+const errorController = require("./controllers/errorController");
+
 app.use(cookieParser("secret_passcode"));
 app.use(
   expressSession({
@@ -85,7 +87,11 @@ app.get("/users", usersController.getAllUsers, (req, res) => {
 });
 
 app.post("/users/create", usersController.create, usersController.redirectView);
-
+app.post(
+  "/users/login",
+  usersController.authenticate,
+  usersController.redirectView
+);
 app.get("/users/:id", usersController.getSingleUser, (req, res) => {
   return res.json(res.locals.user);
 });
@@ -102,6 +108,10 @@ app.delete(
   usersController.delete,
   usersController.redirectView
 );
+
+app.use(errorController.logErrors);
+app.use(errorController.respondNoErrorFound);
+app.use(errorController.respondInternalError);
 
 app.listen(app.get("port"), () => {
   console.log(`Server is running on port ${app.get("port")}`);
