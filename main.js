@@ -1,11 +1,32 @@
 const express = require("express");
 const app = express();
+const expressSession = require("express-session");
+const cookieParser = require("cookie-parser");
+const connectFlash = require("connect-flash");
+
+app.use(cookieParser("secret_passcode"));
+app.use(
+  expressSession({
+    secret: "secret_passcode",
+    cookie: {
+      maxAge: 4000000,
+    },
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(connectFlash());
+app.use((req, res, next) => {
+  res.locals.flashMessages = req.flash();
+  next();
+});
 const methodOverride = require("method-override");
 app.use(
   methodOverride("_method", {
     methods: ["POST", "GET"],
   })
 );
+
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 

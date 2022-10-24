@@ -38,6 +38,7 @@ module.exports = {
     };
     User.create(userParams)
       .then((user) => {
+        req.flash("success", `${user}'s account created successfully!`);
         res.locals.redirect = "/users";
         res.locals.user = user;
         next();
