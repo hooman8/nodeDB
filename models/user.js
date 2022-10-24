@@ -49,22 +49,17 @@ userSchema.virtual("fullName").get(function () {
 
 userSchema.pre("save", function (next) {
   let user = this;
-  if (user.subscribedAccount === undefined) {
-    Subscriber.findOne({
-      email: user.email,
+  Subscriber.findOne({
+    email: user.email,
+  })
+    .then((subscriber) => {
+      user.subscribedAccount = subscriber;
+      next();
     })
-      .then((subscriber) => {
-        user.subscribedAccount = subscriber;
-        console.log(user);
-        next();
-      })
-      .catch((error) => {
-        console.log(`Error in connecting subscriber: ${error.message}`);
-        next(error);
-      });
-  } else {
-    next();
-  }
+    .catch((error) => {
+      console.log(`Error in connecting subscriber: ${error.message}`);
+      next(error);
+    });
 });
 
 module.exports = mongoose.model("User", userSchema);

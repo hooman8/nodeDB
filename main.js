@@ -1,12 +1,16 @@
-const { Router } = require("express");
 const express = require("express");
 const app = express();
-
+const methodOverride = require("method-override");
+app.use(
+  methodOverride("_method", {
+    methods: ["POST", "GET"],
+  })
+);
 const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 
 const subscriberController = require("./controllers/subscribersController");
-const userController = require("./controllers/usersController");
+const usersController = require("./controllers/usersController");
 const coursesController = require("./controllers/coursesController");
 
 app.set("port", process.env.PORT || 3000);
@@ -52,18 +56,31 @@ app.post(
   subscriberController.redirectView
 );
 
-app.get("/users", userController.getAllUsers, (req, res) => {
+app.get("/users", usersController.getAllUsers, (req, res) => {
   if (res.locals.users) {
     return res.json(res.locals.users);
   }
   res.json([]);
 });
 
-app.post("/users/create", userController.create, userController.redirectView);
+app.post("/users/create", usersController.create, usersController.redirectView);
 
-app.get("/users/:id", userController.getSingleUser, (req, res) => {
+app.get("/users/:id", usersController.getSingleUser, (req, res) => {
   return res.json(res.locals.user);
 });
+// /users/${user._id}/update?_method=PUT
+app.put(
+  "/users/:id/update",
+  usersController.update,
+  usersController.redirectView
+);
+
+// /users/${user._id}/delete?_method=DELETE
+app.delete(
+  "/users/:id/delete",
+  usersController.delete,
+  usersController.redirectView
+);
 
 app.listen(app.get("port"), () => {
   console.log(`Server is running on port ${app.get("port")}`);
