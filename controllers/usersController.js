@@ -48,6 +48,36 @@ module.exports = {
         next(error);
       });
   },
+  validate: (req, res, next) => {
+    req
+      .sanitizeBody("email")
+      .normalizeEmail({
+        all_lowercase: true,
+      })
+      .trim();
+    req.check("email", "Email is invalid").isEmail();
+    req
+      .check("zipCode", "Zip code is invalid")
+      .notEmpty()
+      .isInt()
+      .isLength({
+        min: 5,
+        max: 5,
+      })
+      .equals(req.body.zipCode);
+    req.check("password", "password cannot be empty").isEmpty();
+    req.getValidationResult().then((error) => {
+      if (!error.isEmpty()) {
+        let messages = error.array().map((e) => e.msg);
+        req.skip = true;
+        req.flash("error", messages.join(" and "));
+        res.locals.redirect = "/users/create";
+        next();
+      } else {
+        next();
+      }
+    });
+  },
   authenticate: (req, res, next) => {
     User.findOne({
       email: req.body.email,

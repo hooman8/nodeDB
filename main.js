@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
+const mongoose = require("mongoose");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 const connectFlash = require("connect-flash");
+const expressValidator = require("express-validator");
 
 const errorController = require("./controllers/errorController");
 
@@ -29,7 +31,6 @@ app.use(
   })
 );
 
-const mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 
 const subscriberController = require("./controllers/subscribersController");
@@ -45,6 +46,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(expressValidator());
 
 mongoose.connect("mongodb://localhost:27017/recipe_db", {
   useNewUrlParser: true,
@@ -86,7 +88,12 @@ app.get("/users", usersController.getAllUsers, (req, res) => {
   res.json([]);
 });
 
-app.post("/users/create", usersController.create, usersController.redirectView);
+app.post(
+  "/users/create",
+  usersController.validate,
+  usersController.create,
+  usersController.redirectView
+);
 app.post(
   "/users/login",
   usersController.authenticate,
