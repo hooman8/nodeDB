@@ -4,8 +4,7 @@ const mongoose = require("mongoose");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 const connectFlash = require("connect-flash");
-const expressValidator = require("express-validator");
-
+const { body, validationResult } = require("express-validator");
 const errorController = require("./controllers/errorController");
 
 app.use(cookieParser("secret_passcode"));
@@ -46,7 +45,6 @@ app.use(
 );
 
 app.use(express.json());
-app.use(expressValidator());
 
 mongoose.connect("mongodb://localhost:27017/recipe_db", {
   useNewUrlParser: true,
@@ -90,7 +88,14 @@ app.get("/users", usersController.getAllUsers, (req, res) => {
 
 app.post(
   "/users/create",
-  usersController.validate,
+  body("email").isEmail().normalizeEmail(),
+  body("password").notEmpty(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+  },
   usersController.create,
   usersController.redirectView
 );
