@@ -4,9 +4,34 @@ const mongoose = require("mongoose");
 const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 const connectFlash = require("connect-flash");
+const passport = require("passport");
 const { body, validationResult } = require("express-validator");
 const errorController = require("./controllers/errorController");
+const User = require("./models/user");
+mongoose.Promise = global.Promise;
+mongoose.connect("mongodb://localhost:27017/recipe_db", {
+  useNewUrlParser: true,
+});
+const db = mongoose.connection;
 
+db.once("open", () => {
+  console.log("Successfully connected to MongoDB using Mongoose");
+});
+app.set("port", process.env.PORT || 3000);
+app.use(express.static("public"));
+app.use(
+  express.urlencoded({
+    extended: false,
+  })
+);
+
+app.use(express.json());
+const methodOverride = require("method-override");
+app.use(
+  methodOverride("_method", {
+    methods: ["POST", "GET"],
+  })
+);
 app.use(cookieParser("secret_passcode"));
 app.use(
   expressSession({
@@ -19,41 +44,21 @@ app.use(
   })
 );
 app.use(connectFlash());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 app.use((req, res, next) => {
   res.locals.flashMessages = req.flash();
+  res.locals.loggedIm = req.isAuthenticated();
+  res.locals.currentUser = req.user;
   next();
 });
-const methodOverride = require("method-override");
-app.use(
-  methodOverride("_method", {
-    methods: ["POST", "GET"],
-  })
-);
-
-mongoose.Promise = global.Promise;
 
 const subscriberController = require("./controllers/subscribersController");
 const usersController = require("./controllers/usersController");
 const coursesController = require("./controllers/coursesController");
-
-app.set("port", process.env.PORT || 3000);
-app.use(express.static("public"));
-app.use(
-  express.urlencoded({
-    extended: false,
-  })
-);
-
-app.use(express.json());
-
-mongoose.connect("mongodb://localhost:27017/recipe_db", {
-  useNewUrlParser: true,
-});
-const db = mongoose.connection;
-
-db.once("open", () => {
-  console.log("Successfully connected to MongoDB using Mongoose");
-});
 
 app.get("/courses", coursesController.getAllCourses, (req, res) => {
   if (res.locals.courses) {
@@ -89,21 +94,24 @@ app.get("/users", usersController.getAllUsers, (req, res) => {
 app.post(
   "/users/create",
   body("email").isEmail().normalizeEmail(),
-  body("password").notEmpty(),
-  (req, res) => {
+  (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
+    next();
   },
   usersController.create,
   usersController.redirectView
 );
-app.post(
-  "/users/login",
-  usersController.authenticate,
-  usersController.redirectView
-);
+app.post("/users/login", usersController.authenticate, (req, res) => {
+  let user = req.user;
+  if (req.isAuthenticated()) {
+    return res.status(200).json({ user });
+  }
+  return res.status(401).json({ error: "not authorized" });
+});
+app.get("/users/logout", usersController.logout);
 app.get("/users/:id", usersController.getSingleUser, (req, res) => {
   return res.json(res.locals.user);
 });
