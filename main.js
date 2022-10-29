@@ -5,9 +5,8 @@ const expressSession = require("express-session");
 const cookieParser = require("cookie-parser");
 const connectFlash = require("connect-flash");
 const passport = require("passport");
-const { body, validationResult } = require("express-validator");
-const errorController = require("./controllers/errorController");
 const User = require("./models/user");
+const router = require("./routes/index");
 mongoose.Promise = global.Promise;
 mongoose.connect("mongodb://localhost:27017/recipe_db", {
   useNewUrlParser: true,
@@ -57,7 +56,6 @@ app.use((req, res, next) => {
 });
 
 const subscriberController = require("./controllers/subscribersController");
-const usersController = require("./controllers/usersController");
 const coursesController = require("./controllers/coursesController");
 
 app.get("/courses", coursesController.getAllCourses, (req, res) => {
@@ -84,55 +82,7 @@ app.post(
   subscriberController.redirectView
 );
 
-app.get("/users", usersController.getAllUsers, (req, res) => {
-  if (res.locals.users) {
-    return res.json(res.locals.users);
-  }
-  res.json([]);
-});
-
-app.post(
-  "/users/create",
-  body("email").isEmail().normalizeEmail(),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    next();
-  },
-  usersController.create,
-  usersController.redirectView
-);
-app.post("/users/login", usersController.authenticate, (req, res) => {
-  let user = req.user;
-  if (req.isAuthenticated()) {
-    return res.status(200).json({ user });
-  }
-  return res.status(401).json({ error: "not authorized" });
-});
-app.get("/users/logout", usersController.logout);
-app.get("/users/:id", usersController.getSingleUser, (req, res) => {
-  return res.json(res.locals.user);
-});
-// /users/${user._id}/update?_method=PUT
-app.put(
-  "/users/:id/update",
-  usersController.update,
-  usersController.redirectView
-);
-
-// /users/${user._id}/delete?_method=DELETE
-app.delete(
-  "/users/:id/delete",
-  usersController.delete,
-  usersController.redirectView
-);
-
-app.use(errorController.logErrors);
-app.use(errorController.respondNoErrorFound);
-app.use(errorController.respondInternalError);
-
+app.use("/", router);
 app.listen(app.get("port"), () => {
   console.log(`Server is running on port ${app.get("port")}`);
 });
