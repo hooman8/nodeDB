@@ -1,6 +1,8 @@
 const User = require("../models/user");
 const passport = require("passport");
 const mongoose = require("mongoose");
+const token = process.env.TOKEN || "recipeT0k3n";
+
 module.exports = {
   getAllUsers: (req, res, next) => {
     User.find({})
@@ -95,6 +97,10 @@ module.exports = {
         console.log(`Error deleting user by ID: ${error.message}`);
         next();
       });
+  },
+  verifyToken: (req, res, next) => {
+    if (req.query.apiToken === token) next();
+    else next(new Error("Invalid API Token"));
   },
   redirectView: (req, res, next) => {
     let redirectPath = res.locals.redirect;
