@@ -7,7 +7,9 @@ const connectFlash = require("connect-flash");
 const passport = require("passport");
 const User = require("./models/user");
 const router = require("./routes/index");
+
 mongoose.Promise = global.Promise;
+
 mongoose.connect("mongodb://localhost:27017/recipe_db", {
   useNewUrlParser: true,
 });
@@ -55,34 +57,8 @@ app.use((req, res, next) => {
   next();
 });
 
-const subscriberController = require("./controllers/subscribersController");
-const coursesController = require("./controllers/coursesController");
-
-app.get("/courses", coursesController.getAllCourses, (req, res) => {
-  if (res.locals.courses) {
-    return res.json(res.locals.courses);
-  }
-  return res.json([]);
-});
-app.get("/courses/:id", coursesController.getSingleCourse, (req, res) => {
-  return res.json(res.locals.course || []);
-});
-app.post(
-  "/courses/create",
-  coursesController.create,
-  coursesController.redirectView
-);
-
-app.get("/subscribers", subscriberController.getAllSubscribers, (req, res) => {
-  res.json(res.locals.subscribers || []);
-});
-app.post(
-  "/subscribe",
-  subscriberController.create,
-  subscriberController.redirectView
-);
-
 app.use("/", router);
+
 app.listen(app.get("port"), () => {
   console.log(`Server is running on port ${app.get("port")}`);
 });
