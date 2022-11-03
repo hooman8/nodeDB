@@ -99,8 +99,19 @@ module.exports = {
       });
   },
   verifyToken: (req, res, next) => {
-    if (req.query.apiToken === token) next();
-    else next(new Error("Invalid API Token"));
+    let token = req.query.apiToken;
+    if (token) {
+      User.findOne({ apiToken: token })
+        .then((user) => {
+          if (user) next();
+          else next(new Error("Invalid Api Token"));
+        })
+        .catch((error) => {
+          next(new Error(error.message));
+        });
+    } else {
+      next(new Error("Invalid API Token"));
+    }
   },
   redirectView: (req, res, next) => {
     let redirectPath = res.locals.redirect;
