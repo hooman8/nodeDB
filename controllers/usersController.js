@@ -1,7 +1,8 @@
 const User = require("../models/user");
 const passport = require("passport");
 const mongoose = require("mongoose");
-const token = process.env.TOKEN || "recipeT0k3n";
+// const token = process.env.TOKEN || "recipeT0k3n";
+const jsonWebToken = require("jsonwebtoken");
 
 module.exports = {
   getAllUsers: (req, res, next) => {
@@ -61,6 +62,55 @@ module.exports = {
     req.flash("success", "You have been logged out!");
     res.locals.redirect = "/";
     next();
+  },
+  apiAuthenticate: (req, res, next) => {
+    passport.authenticate("local", (errors, user) => {
+      if (user) {
+        let signedToken = jsonWebToken.sign({ user: user._id }, "secret", {
+          expiresIn: "1h",
+        });
+        res.json({
+          success: true,
+          token: signedToken,
+        });
+      } else {
+        res.json({
+          success: false,
+          message: "could not authenticate user",
+        });
+      }
+    })(req, res, next);
+  },
+  verifyJWT: (req, res, next) => {
+    let token = req.headers.token;
+    if (token) {
+      jsonWebToken.verify(token, "secret", (errors, payload) => {
+        if (payload) {
+          console.log(payload);
+          User.findById(payload.user).then((user) => {
+            if (user) {
+              next();
+            } else {
+              res.status(403).json({
+                error: true,
+                message: "no user account found",
+              });
+            }
+          });
+        } else {
+          res.status(401).json({
+            error: true,
+            message: "cannot verify API token",
+          });
+          next();
+        }
+      });
+    } else {
+      res.status(401).json({
+        error: true,
+        message: "No Authentication Token Found",
+      });
+    }
   },
   update: (req, res, next) => {
     let userId = req.params.id;
