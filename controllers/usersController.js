@@ -86,7 +86,6 @@ module.exports = {
     if (token) {
       jsonWebToken.verify(token, "secret", (errors, payload) => {
         if (payload) {
-          console.log(payload);
           User.findById(payload.user).then((user) => {
             if (user) {
               next();
