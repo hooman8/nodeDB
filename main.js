@@ -19,6 +19,7 @@ db.once("open", () => {
   console.log("Successfully connected to MongoDB using Mongoose");
 });
 app.set("port", process.env.PORT || 3000);
+app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(
   express.urlencoded({
@@ -59,6 +60,8 @@ app.use((req, res, next) => {
 
 app.use("/", router);
 
-app.listen(app.get("port"), () => {
+const server = app.listen(app.get("port"), () => {
   console.log(`Server is running on port ${app.get("port")}`);
 });
+const io = require("socket.io")(server);
+require("./controllers/chatController")(io);
