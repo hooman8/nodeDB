@@ -4,10 +4,12 @@ module.exports = (io) => {
     client.on("disconnect", () => {
       console.log("user disconnected");
     });
-    client.on("message", () => {
-      io.emit("message", {
-        content: "hello",
-      });
+    client.on("message", (data) => {
+      let messageAttributes = {
+        content: data.content,
+        user: data.userId,
+      };
+      io.emit("message", messageAttributes);
     });
   });
 };
